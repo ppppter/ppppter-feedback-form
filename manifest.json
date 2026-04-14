@@ -1,0 +1,27 @@
+{
+    "name": "小学生作业辅导反馈表",
+    "short_name": "辅导反馈",
+    "description": "用于记录小学生作业辅导反馈的工具",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#e3f2fd",
+    "theme_color": "#2196f3",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232196f3' width='192' height='192' rx='32'/><text x='96' y='130' font-size='100' text-anchor='middle' fill='white'>📝</text></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%232196f3' width='512' height='512' rx='80'/><text x='256' y='340' font-size='280' text-anchor='middle' fill='white'>📝</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["education", "productivity"],
+    "lang": "zh-HK",
+    "dir": "ltr"
+}
