@@ -1,7 +1,7 @@
-const CACHE_NAME = 'feedback-form-v1';
+const CACHE_NAME = 'feedback-form-v2';
 const urlsToCache = [
-  '/2026-04-20/',
-  '/2026-04-20/index.html'
+  '/pppter-feedback-form/',
+  '/pppter-feedback-form/index.html'
 ];
 
 self.addEventListener('install', event => {
