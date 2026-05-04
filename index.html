@@ -4,11 +4,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="description" content="小學生作業輔導反饋表 - 方便快捷的輔導記錄工具">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="輔導反饋">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%232563eb' width='100' height='100' rx='20'/><text y='.9em' x='50%' text-anchor='middle' font-size='70'>⭐</text></svg>">
   <title>小學生作業輔導反饋表</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap">
-  <link rel="manifest" href="/pppter-feedback-form/manifest.json">
-  <meta name="theme-color" content="#2563eb">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -51,6 +56,8 @@
     .container {
       max-width: 520px;
       margin: 0 auto;
+      position: relative;
+      padding-top: 0;
     }
 
     .page-header {
@@ -68,12 +75,115 @@
       gap: 8px;
     }
 
+    .sidebar-toggle {
+      position: sticky;
+      top: 12px;
+      left: 12px;
+      z-index: 10001;
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .35);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    .sidebar-toggle:active {
+      transform: scale(.95);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 64px;
+      left: 12px;
+      z-index: 10000;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      width: 160px;
+      overflow: visible;
+      display: none;
+      flex-direction: column;
+    }
+
+    .sidebar.show {
+      display: flex;
+    }
+
+    .sidebar-item {
+      padding: 14px 16px;
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition: background .15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-item:hover {
+      background: var(--primary-light);
+    }
+
+    .sidebar-item.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .sidebar-item i {
+      width: 18px;
+      text-align: center;
+    }
+
+    .sidebar-submenu {
+      padding-left: 32px;
+    }
+
+    .sidebar-subitem {
+      padding: 10px 16px;
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sidebar-subitem:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
     .card {
       background: var(--card);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 20px;
       margin-bottom: 16px;
+    }
+
+    .page-section {
+      display: none;
+    }
+
+    .page-section.active {
+      display: block;
     }
 
     .form-group {
@@ -143,26 +253,27 @@
 
     .checkbox-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
     }
 
     .checkbox-grid label {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
+      justify-content: center;
+      padding: 8px 4px;
       border: 2px solid var(--border);
       border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: .95rem;
+      font-size: .85rem;
       font-weight: 500;
       transition: all .15s;
       user-select: none;
       background: var(--input-bg);
-      min-height: 46px;
-      justify-content: center;
-      min-width: 0;
+      min-height: 38px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .checkbox-grid label span {
@@ -177,14 +288,18 @@
     }
 
     .checkbox-grid input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-      accent-color: var(--primary);
+      display: none;
     }
 
-    .checkbox-grid input[type="checkbox"]:checked+span {
-      color: var(--primary);
+    .checkbox-grid input[type="checkbox"]:checked + span {
+      color: #fff;
       font-weight: 600;
+    }
+
+    .checkbox-grid label:has(input:checked) {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
     }
 
     .checkbox-grid label.custom-name {
@@ -220,7 +335,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 46px;
+      min-height: 38px;
       border: 2px dashed var(--accent);
       border-radius: var(--radius-sm);
       background: var(--primary-light);
@@ -228,10 +343,17 @@
       font-size: 1.1rem;
       cursor: pointer;
       transition: background .15s;
+      padding: 8px 4px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .btn-add-name:active {
       background: #bfdbfe;
+    }
+
+    .checkbox-grid .btn-add-name {
+      grid-column: span 1;
     }
 
     .custom-tooltip {
@@ -628,8 +750,37 @@
       background: linear-gradient(135deg, #10b981, #059669);
     }
 
+    .btn-share {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      margin-top: 12px;
+    }
+
     .btn-sync {
       background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    }
+
+    .toggle-all-btn {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .4);
+      z-index: 1000;
+      transition: transform .12s ease;
+    }
+
+    .toggle-all-btn:active {
+      transform: scale(.9);
     }
 
     .btn-wage {
@@ -681,7 +832,7 @@
     .wage-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: .9rem;
+      font-size: 10px;
       margin-top: 8px;
     }
 
@@ -723,7 +874,6 @@
       padding: 20px;
     }
 
-    /* Preview：內邊距會一併進入 JPG；適度留白即可 */
     .preview-container {
       display: none;
       margin-top: 8px;
@@ -732,6 +882,10 @@
       background: var(--bg);
       border-radius: var(--radius);
       box-sizing: border-box;
+    }
+
+    .preview-container.active {
+      display: block;
     }
 
     .pv-banner {
@@ -744,7 +898,6 @@
       overflow: hidden;
     }
 
-    /* 預覽頂欄：第一行 標題+日期；第二行 姓名單行自適應字號 */
     .pv-banner--stacked .pv-banner-row1 {
       display: flex;
       flex-wrap: wrap;
@@ -817,7 +970,6 @@
       background: linear-gradient(135deg, #4a90d9, #3570b8);
     }
 
-    /* 總結：與頂部「輔導反饋」同色，標題列略大 */
     .pv-card-header--summary {
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       padding: 2px 16px;
@@ -825,10 +977,6 @@
       box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
     }
 
-    /*
-      總結區：標題列用深藍+白字（短句適宜）；正文區用「加深淺藍/灰藍底 + 深灰字」。
-      若正文整塊純藍底+白字，長段落易疲勞且對比過強，故不用白字正文。
-    */
     .pv-card--summary-block {
       background: linear-gradient(165deg, #bfdbfe 0%, #c4d4fd 50%, #d8e0fe 100%);
       border: 2px solid #60a5fa;
@@ -1065,112 +1213,178 @@
   </div>
 
   <div class="container">
+    <button class="sidebar-toggle" id="sidebarToggle">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-item active" data-page="workspace" onclick="switchPage('workspace')">
+        <i class="fas fa-desktop"></i> 工作台
+      </div>
+      <div class="sidebar-submenu">
+        <div class="sidebar-subitem" onclick="event.stopPropagation();resetForm()">
+          <i class="fas fa-redo"></i> - 重設表單
+        </div>
+      </div>
+      <div class="sidebar-item" data-page="query" onclick="switchPage('query')">
+        <i class="fas fa-search"></i> 查詢
+      </div>
+    </div>
+
     <div class="page-header">
       <h1><i class="fas fa-star" style="color:var(--primary)"></i> 輔導反饋</h1>
     </div>
 
-    <!-- Date & Names -->
-    <div class="card">
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-calendar-alt"></i> 日期</label>
-        <div class="date-input-wrapper">
-          <input type="date" id="dateInput">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-chalkboard"></i> Class 1</label>
-        <div class="checkbox-grid" id="nameCheckboxesClass1">
-          <label title="Amber"><input type="checkbox" name="studentNameClass1" value="Amber"><span>Amber</span></label>
-          <label title="Audrey"><input type="checkbox" name="studentNameClass1" value="Audrey"><span>Audrey</span></label>
-          <label title="Gregory"><input type="checkbox" name="studentNameClass1" value="Gregory"><span>Gregory</span></label>
-          <label title="Jason"><input type="checkbox" name="studentNameClass1" value="Jason"><span>Jason</span></label>
-          <label title="Vicente"><input type="checkbox" name="studentNameClass1" value="Vicente"><span>Vicente</span></label>
-          <label title="Bella"><input type="checkbox" name="studentNameClass1" value="Bella"><span>Bella</span></label>
-          <button class="btn-add-name" onclick="addStudent('Class1')"><i class="fas fa-plus"></i></button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-chalkboard"></i> Class 2</label>
-        <div class="checkbox-grid" id="nameCheckboxesClass2">
-          <label title="Amber"><input type="checkbox" name="studentNameClass2" value="Amber"><span>Amber</span></label>
-          <label title="Audrey"><input type="checkbox" name="studentNameClass2" value="Audrey"><span>Audrey</span></label>
-          <label title="Gregory"><input type="checkbox" name="studentNameClass2" value="Gregory"><span>Gregory</span></label>
-          <label title="Jason"><input type="checkbox" name="studentNameClass2" value="Jason"><span>Jason</span></label>
-          <label title="Vicente"><input type="checkbox" name="studentNameClass2" value="Vicente"><span>Vicente</span></label>
-          <label title="Bella"><input type="checkbox" name="studentNameClass2" value="Bella"><span>Bella</span></label>
-          <button class="btn-add-name" onclick="addStudent('Class2')"><i class="fas fa-plus"></i></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Section 3: Subject Details -->
-    <div class="section-title"><i class="fas fa-book-open"></i> 學科詳情</div>
-    <div id="subjectsContainer"></div>
-    <button type="button" class="btn-add-subject" onclick="addSubject()"><i
-        class="fas fa-folder-plus"></i><span>新增學科</span></button>
-
-    <!-- Section 4: Summary -->
-    <div class="card">
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-comment-dots"></i> 總結</label>
-        <textarea class="summary-textarea" id="summaryInput" placeholder="寫下今天的學習總結吧~"
-          oninput="autoGrow(this);debounceSave()"></textarea>
-      </div>
-    </div>
-
-    <!-- Section 5: Wage Calculator -->
-    <div class="card">
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-calculator"></i> 工資計算</label>
-        <div class="wage-date-range">
-          <div class="wage-date-input">
-            <label>開始日期</label>
-            <div class="date-input-wrapper">
-              <input type="date" id="wageStartDate">
-            </div>
-          </div>
-          <div class="wage-date-input">
-            <label>結束日期</label>
-            <div class="date-input-wrapper">
-              <input type="date" id="wageEndDate">
-            </div>
+    <div id="pageWorkspace" class="page-section active">
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-calendar-alt"></i> 日期</label>
+          <div class="date-input-wrapper">
+            <input type="date" id="dateInput">
           </div>
         </div>
-        <button class="btn-action btn-wage" onclick="calculateWages()"><i class="fas fa-list"></i> 工資小計</button>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-chalkboard"></i> Class 1</label>
+          <div class="checkbox-grid" id="nameCheckboxesClass1">
+            <label title="Amber"><input type="checkbox" name="studentNameClass1" value="Amber"><span>Amber</span></label>
+            <label title="Audrey"><input type="checkbox" name="studentNameClass1" value="Audrey"><span>Audrey</span></label>
+            <label title="Gregory"><input type="checkbox" name="studentNameClass1" value="Gregory"><span>Gregory</span></label>
+            <label title="Jason"><input type="checkbox" name="studentNameClass1" value="Jason"><span>Jason</span></label>
+            <label title="Vicente"><input type="checkbox" name="studentNameClass1" value="Vicente"><span>Vicente</span></label>
+            <label title="Bella"><input type="checkbox" name="studentNameClass1" value="Bella"><span>Bella</span></label>
+            <button class="btn-add-name" onclick="addStudent('Class1')"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-chalkboard"></i> Class 2</label>
+          <div class="checkbox-grid" id="nameCheckboxesClass2">
+            <label title="Amber"><input type="checkbox" name="studentNameClass2" value="Amber"><span>Amber</span></label>
+            <label title="Audrey"><input type="checkbox" name="studentNameClass2" value="Audrey"><span>Audrey</span></label>
+            <label title="Gregory"><input type="checkbox" name="studentNameClass2" value="Gregory"><span>Gregory</span></label>
+            <label title="Jason"><input type="checkbox" name="studentNameClass2" value="Jason"><span>Jason</span></label>
+            <label title="Vicente"><input type="checkbox" name="studentNameClass2" value="Vicente"><span>Vicente</span></label>
+            <label title="Bella"><input type="checkbox" name="studentNameClass2" value="Bella"><span>Bella</span></label>
+            <button class="btn-add-name" onclick="addStudent('Class2')"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
       </div>
+
+      <div class="section-title"><i class="fas fa-book-open"></i> 學科詳情</div>
+      <div id="subjectsContainer"></div>
+      <button type="button" class="btn-add-subject" onclick="addSubject()"><i
+          class="fas fa-folder-plus"></i><span>新增學科</span></button>
+
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-comment-dots"></i> 總結</label>
+          <textarea class="summary-textarea" id="summaryInput" placeholder="寫下今天的學習總結吧~"
+            oninput="autoGrow(this);debounceSave()"></textarea>
+        </div>
+      </div>
+
+      <div class="card btn-group">
+        <button class="btn-action btn-share" onclick="handleShare()"><i class="fas fa-share-alt"></i> 分享</button>
+        <button class="btn-action btn-upload" onclick="handleUpload()"><i class="fas fa-cloud-upload-alt"></i> 上傳到雲端</button>
+      </div>
+
+      <div class="preview-container" id="previewContainer" style="display:none;">
+        <div id="previewContent"></div>
+      </div>
+
+      <button id="toggleAllBtn" class="toggle-all-btn" onclick="toggleAllSubjects()">
+        <i class="fas fa-expand-arrows-alt"></i>
+      </button>
     </div>
 
-    <!-- Wage Result Area -->
-    <div class="card wage-result-card" id="wageResultCard" style="display:none;">
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-file-invoice-dollar"></i> 工資明細</label>
-        <div id="wageResultContent"></div>
+    <div id="pageQuery" class="page-section">
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-calculator"></i> 工資計算</label>
+          <div class="wage-date-range">
+            <div class="wage-date-input">
+              <label>開始日期</label>
+              <div class="date-input-wrapper">
+                <input type="date" id="wageStartDate">
+              </div>
+            </div>
+            <div class="wage-date-input">
+              <label>結束日期</label>
+              <div class="date-input-wrapper">
+                <input type="date" id="wageEndDate">
+              </div>
+            </div>
+          </div>
+          <button class="btn-action btn-wage" onclick="calculateWages()"><i class="fas fa-list"></i> 工資小計</button>
+        </div>
       </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="card btn-group">
-      <button class="btn-action btn-preview" onclick="generatePreview()"><i class="fas fa-eye"></i> 生成預覽</button>
-      <button class="btn-action btn-upload" onclick="handleUpload()"><i class="fas fa-cloud-upload-alt"></i> 上傳到雲端</button>
-      <button class="btn-action btn-sync" onclick="handleSync()"><i class="fas fa-sync-alt"></i> 從雲端同步</button>
-      <button class="btn-action btn-download" onclick="downloadAsJPG()"><i class="fas fa-camera"></i> 下載為 JPG</button>
-      <button class="btn-action btn-reset" onclick="resetForm()"><i class="fas fa-redo"></i> 重設表單</button>
+      <div class="card wage-result-card" id="wageResultCard" style="display:none;">
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-file-invoice-dollar"></i> 工資明細</label>
+          <div id="wageResultContent"></div>
+          <div class="btn-group" style="margin-top:12px;text-align:center">
+            <button class="btn-action" onclick="exportWageToExcel()" style="background:linear-gradient(135deg,#10b981,#059669)">
+              <i class="fas fa-file-excel"></i> 導出為 Excel
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="custom-tooltip" id="tooltip"></div>
 
-    <!-- Preview Area -->
-    <div class="preview-container" id="previewContainer">
-      <div id="previewContent"></div>
+    <div id="syncLoadingOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.9);z-index:99998;display:none;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="text-align:center">
+        <i class="fas fa-sync-alt" style="font-size:32px;color:var(--primary);animation:spin 1s linear infinite"></i>
+        <p style="margin-top:12px;font-size:14px;color:var(--text-secondary)">正在同步雲端數據...</p>
+      </div>
     </div>
+
+    <style>
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </div>
 
   <script>
-    // ========== Supabase 配置 ==========
     var SUPABASE_URL = 'https://latgpdczgzrtiemkvowd.supabase.co';
     var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhdGdwZGN6Z3pydGllbWt2b3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MzM2NjMsImV4cCI6MjA5MjAwOTY2M30.q5J7VtQa7Of-J2bEZgqU_CqF03dgHpL-rY-K1fq0mxw';
 
     var supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    var currentPage = 'workspace';
+
+    function switchPage(page) {
+      currentPage = page;
+      document.querySelectorAll('.page-section').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+      document.querySelectorAll('.sidebar-item').forEach(function(el) {
+        el.classList.remove('active');
+        if (el.dataset.page === page) {
+          el.classList.add('active');
+        }
+      });
+      document.getElementById('sidebar').classList.remove('show');
+      window.scrollTo(0, 0);
+      if (page === 'preview') {
+        generatePreview();
+      }
+    }
+
+    document.getElementById('sidebarToggle').addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.getElementById('sidebar').classList.toggle('show');
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.sidebar') && !e.target.closest('.sidebar-toggle')) {
+        document.getElementById('sidebar').classList.remove('show');
+      }
+    });
 
     function zeroPad(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -1274,7 +1488,6 @@
     var isResetting = false;
     var isRestoringFromCloud = false;
 
-    // ========== Add / Remove Student ==========
     function makeShort(name) {
       return name.length <= 3 ? name : name.slice(0, 3);
     }
@@ -1291,14 +1504,7 @@
 
         var grid = document.getElementById('nameCheckboxes' + classSuffix);
         if (!grid) grid = document.getElementById('nameCheckboxesClass1');
-        var btn = grid.querySelector('.btn-add-name');
-        var lbl = document.createElement('label');
-        lbl.className = 'custom-name';
-        lbl.title = name;
-        lbl.innerHTML = '<input type="checkbox" name="studentName' + classSuffix + '" value="' + escapeHtml(name) + '" checked>' +
-          '<span>' + escapeHtml(name) + '</span>' +
-          '<button class="btn-remove-name" onclick="event.preventDefault();event.stopPropagation();removeStudent(\'' + escapeHtml(name) + '\', \'' + classSuffix + '\')"><i class="fas fa-times"></i></button>';
-        grid.insertBefore(lbl, btn);
+        addCustomNameToGrid(grid, name, 'studentName' + classSuffix);
 
         var allCards = document.querySelectorAll('.hw-card .assignee-tags');
         for (var i = 0; i < allCards.length; i++) {
@@ -1307,6 +1513,26 @@
         }
         debounceSave();
       });
+    }
+
+    function addCustomNameToGrid(grid, name, inputName) {
+      if (!grid || !name) return;
+      var btn = grid.querySelector('.btn-add-name');
+      if (!btn) return;
+      var exists = grid.querySelector('input[name="' + inputName + '"][value="' + name + '"]');
+      if (exists) return;
+      if (NAMES.indexOf(name) === -1) {
+        NAMES.push(name);
+        SHORT[name] = SHORT[name] || makeShort(name);
+      }
+      var short = SHORT[name];
+      var lbl = document.createElement('label');
+      lbl.className = 'custom-name';
+      lbl.title = name;
+      lbl.innerHTML = '<input type="checkbox" name="' + inputName + '" value="' + escapeHtml(name) + '" checked>' +
+        '<span>' + escapeHtml(name) + '</span>' +
+        '<button class="btn-remove-name" onclick="event.preventDefault();event.stopPropagation();removeStudent(\'' + escapeHtml(name) + '\', \'' + inputName.replace('studentName', '') + '\')"><i class="fas fa-times"></i></button>';
+      grid.insertBefore(lbl, btn);
     }
 
     function removeStudent(name, classSuffix) {
@@ -1330,7 +1556,6 @@
       });
     }
 
-    // ========== Init ==========
     (function init() {
       setDateInputToday();
 
@@ -1346,6 +1571,7 @@
       if (!document.getElementById('dateInput').value) {
         setDateInputToday();
       }
+      setTimeout(function() { performAutoSync(); }, 800);
     })();
 
     function restoreCustomNames() {
@@ -1399,7 +1625,6 @@
       } catch (e) { }
     }
 
-    // ========== Build Subject HTML ==========
     function buildSubjectHTML(subj, idx) {
       var delBtn = subj.custom
         ? '<button class="btn-del-subject" onclick="event.stopPropagation();removeSubject(\'' + subj.id + '\')"><i class="fas fa-trash-alt"></i></button>'
@@ -1419,7 +1644,6 @@
         '</div>';
     }
 
-    // ========== Build Row (hw-card) HTML ==========
     function buildRowHTML(subjectId, num) {
       var id = 'r' + Date.now() + Math.random().toString(36).slice(2, 6);
       if (!num) num = getNextCardNum(subjectId);
@@ -1463,19 +1687,16 @@
       }
     }
 
-    // ========== Auto-grow textarea ==========
     function autoGrow(el) {
       el.style.height = 'auto';
       el.style.height = el.scrollHeight + 'px';
     }
 
-    // ========== Toggle assignee ==========
     function toggleTag(el) {
       el.classList.toggle('selected');
       debounceSave();
     }
 
-    // ========== Extra column per card ==========
     function addExtraCol(cardId) {
       customPrompt('請輸入欄位名稱：', function (colName) {
         if (!colName || !colName.trim()) return;
@@ -1510,12 +1731,29 @@
       debounceSave();
     }
 
-    // ========== Subject toggle ==========
     function toggleSubject(id, headerEl) {
       var body = document.getElementById('body-' + id);
       var isHidden = body.style.display === 'none';
       body.style.display = isHidden ? '' : 'none';
       headerEl.classList.toggle('collapsed', !isHidden);
+    }
+
+    var allSubjectsExpanded = true;
+    function toggleAllSubjects() {
+      allSubjectsExpanded = !allSubjectsExpanded;
+      for (var i = 0; i < SUBJECTS.length; i++) {
+        var subj = SUBJECTS[i];
+        var body = document.getElementById('body-' + subj.id);
+        var header = document.querySelector('#section-' + subj.id + ' .subject-header');
+        if (!body || !header) continue;
+        if (allSubjectsExpanded) {
+          body.style.display = '';
+          header.classList.remove('collapsed');
+        } else {
+          body.style.display = 'none';
+          header.classList.add('collapsed');
+        }
+      }
     }
 
     function expandSubjectsWithContent() {
@@ -1561,22 +1799,26 @@
       }
     }
 
-    // ========== Add / Remove Subject ==========
     function addSubject() {
       customPrompt('請輸入學科名稱：', function (label) {
         if (!label || !label.trim()) return;
         label = label.trim();
         var id = 'custom_' + Date.now();
-        var subj = { id: id, label: label, icon: 'fa-folder-open', custom: true };
-        SUBJECTS.push(subj);
-        var container = document.getElementById('subjectsContainer');
-        container.insertAdjacentHTML('beforeend', buildSubjectHTML(subj, SUBJECTS.length - 1));
-        var header = document.querySelector('#section-' + id + ' .subject-header');
-        if (header) header.classList.remove('collapsed');
-        var body = document.getElementById('body-' + id);
-        if (body) body.style.display = '';
-        debounceSave();
+        addCustomSubject(id, label);
       });
+    }
+
+    function addCustomSubject(id, label) {
+      if (!id || !label) return;
+      if (SUBJECTS.find(function(s) { return s.id === id; })) return;
+      var subj = { id: id, label: label, icon: 'fa-folder-open', custom: true };
+      SUBJECTS.push(subj);
+      var container = document.getElementById('subjectsContainer');
+      container.insertAdjacentHTML('beforeend', buildSubjectHTML(subj, SUBJECTS.length - 1));
+      var header = document.querySelector('#section-' + id + ' .subject-header');
+      if (header) header.classList.remove('collapsed');
+      var body = document.getElementById('body-' + id);
+      if (body) body.style.display = '';
     }
 
     function removeSubject(id) {
@@ -1591,7 +1833,6 @@
       });
     }
 
-    // ========== Preview Generation ==========
     function generatePreview() {
       var previewContainer = document.getElementById('previewContainer');
       var previewContent = document.getElementById('previewContent');
@@ -1623,7 +1864,6 @@
           : '') +
         '</div>';
 
-      // First pass: collect all card data per subject
       var allSubjData = [];
       for (var s = 0; s < SUBJECTS.length; s++) {
         var subj = SUBJECTS[s];
@@ -1652,7 +1892,6 @@
         allSubjData.push({ subj: subj, cardsInfo: cardsInfo });
       }
 
-      // Build To-Do card: same subject one row, segments joined by ； each segment has that card's @ assignees
       var todoMap = {};
       var todoOrder = [];
       for (var s = 0; s < allSubjData.length; s++) {
@@ -1691,7 +1930,6 @@
         hasAny = true;
       }
 
-      // Subject detail cards (skip hw-only cards)
       for (var s = 0; s < allSubjData.length; s++) {
         var sd = allSubjData[s];
         var hwCards = [];
@@ -1721,7 +1959,6 @@
         html += subjHtml;
       }
 
-      // Summary card
       var summaryVal = document.getElementById('summaryInput').value.trim();
       if (summaryVal) {
         html += '<div class="pv-card pv-card--summary-block">' +
@@ -1734,11 +1971,8 @@
         html = '<div class="preview-placeholder">仲未填寫任何反饋內容</div>';
       }
       previewContent.innerHTML = html;
-      previewContainer.style.display = 'block';
-      previewContainer.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // ========== Download as JPG ==========
     function fixPreviewCloneLayoutForHtml2Canvas(clonedDoc, sourcePc) {
       if (!clonedDoc) return;
       var cr = clonedDoc.getElementById('previewContainer');
@@ -1756,74 +1990,144 @@
       }
     }
 
-    function downloadAsJPG() {
+    var shareImageDataUrl = null;
+    function handleShare() {
+      generatePreview();
+      setTimeout(function() {
+        captureAndShowSharePanel();
+      }, 500);
+    }
+
+    function captureAndShowSharePanel() {
       if (typeof html2canvas !== 'function') {
         customConfirm('無法載入截圖功能，請檢查網絡後重試。', function () { });
         return;
       }
       var pc = document.getElementById('previewContainer');
-      if (pc.style.display === 'none' || pc.style.display === '') {
-        if (!document.getElementById('previewContent').innerHTML.trim()) {
-          customConfirm('請先生成預覽', function () { }); return;
-        }
-        pc.style.display = 'block';
+      var pcontent = document.getElementById('previewContent');
+      if (!pcontent || !pcontent.innerHTML.trim() || pcontent.querySelector('.preview-placeholder')) {
+        customConfirm('請先生成預覽', function () { });
+        return;
       }
+      pc.classList.add('active');
+      var originalDisplay = pc.style.display;
+      pc.style.display = 'block';
+      var originalScrollY = window.scrollY;
       var ua = navigator.userAgent || '';
       var isUC = /UCBrowser|UCWEB|UBrowser|UCTurbo/i.test(ua);
       var isIOS = /iPhone|iPod|iPad/i.test(ua);
       var isMobileUA = /iPhone|iPad|iPod|Android|Mobile/i.test(ua);
-      var useForeignObject = !isUC && !isIOS;
-      /* 輸出像素 ≈ 版面寬 × scale；手機略保守以免內存吃緊 */
       var captureScale = (isUC || isIOS) ? 2.75 : 3.5;
-      function runCapture() {
-        html2canvas(pc, {
-          scale: captureScale,
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          allowTaint: false,
-          logging: false,
-          foreignObjectRendering: useForeignObject,
-          onclone: function (clonedDoc) {
-            try {
-              fixPreviewCloneLayoutForHtml2Canvas(clonedDoc, pc);
-            } catch (e) { }
-          }
-        }).then(function (canvas) {
-          if (!canvas || !canvas.width) {
-            customConfirm('圖片生成失敗，請換用 Safari 瀏覽器再試。', function () { });
-            return;
-          }
-          var now = new Date();
-          var ts = now.getFullYear() +
-            ('0' + (now.getMonth() + 1)).slice(-2) +
-            ('0' + now.getDate()).slice(-2) +
-            ('0' + now.getHours()).slice(-2) +
-            ('0' + now.getMinutes()).slice(-2) +
-            ('0' + now.getSeconds()).slice(-2);
-          var filename = '輔導總結_' + ts + '.jpg';
-          var dataUrl;
-          try {
-            dataUrl = canvas.toDataURL('image/jpeg', 0.93);
-          } catch (e) {
-            customConfirm('無法匯出圖片，請換用 Safari 瀏覽器再試。', function () { });
-            return;
-          }
-          if (isMobileUA) {
-            showImageModal(dataUrl);
-          } else {
-            var a = document.createElement('a');
-            a.download = filename; a.href = dataUrl;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-          }
-        }).catch(function () {
-          customConfirm('截圖失敗（可能與當前瀏覽器不相容）。建議用 iPhone 自帶 Safari 打開本頁再試。', function () { });
-        });
-      }
-      if (isUC || isIOS) {
-        setTimeout(runCapture, 280);
+      html2canvas(pc, {
+        scale: captureScale,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
+      }).then(function (canvas) {
+        pc.style.display = originalDisplay;
+        window.scrollTo(0, originalScrollY);
+        if (!canvas || !canvas.width) {
+          customConfirm('圖片生成失敗，請換用 Safari 瀏覽器再試。', function () { });
+          return;
+        }
+        try {
+          shareImageDataUrl = canvas.toDataURL('image/jpeg', 0.93);
+          showSharePanel(shareImageDataUrl, isMobileUA);
+        } catch (e) {
+          customConfirm('圖片生成失敗，請換用 Safari 瀏覽器再試。', function () { });
+        }
+      }).catch(function () {
+        pc.style.display = originalDisplay;
+        window.scrollTo(0, originalScrollY);
+        customConfirm('截圖失敗（可能與當前瀏覽器不相容）。建議用 iPhone 自帶 Safari 打開本頁再試。', function () { });
+      });
+    }
+
+    function showSharePanel(dataUrl, isMobileUA) {
+      var overlay = document.createElement('div');
+      overlay.id = 'sharePanel';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px';
+
+      var imgContainer = document.createElement('div');
+      imgContainer.style.cssText = 'width:100%;max-width:320px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)';
+
+      var img = document.createElement('img');
+      img.src = dataUrl;
+      img.style.cssText = 'width:100%;height:auto;display:block';
+
+      var btnContainer = document.createElement('div');
+      btnContainer.style.cssText = 'display:flex;justify-content:center;gap:24px;margin-top:24px;width:100%;max-width:320px';
+
+      var btnWechat = document.createElement('button');
+      btnWechat.innerHTML = '<i class="fab fa-weixin" style="font-size:32px;color:#07c160"></i><span style="display:block;font-size:12px;color:#fff;margin-top:6px">微信</span>';
+      btnWechat.style.cssText = 'background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center';
+      btnWechat.onclick = function() { shareToWechat(dataUrl); };
+
+      var btnAlbum = document.createElement('button');
+      btnAlbum.innerHTML = '<i class="fas fa-image" style="font-size:32px;color:#3b82f6"></i><span style="display:block;font-size:12px;color:#fff;margin-top:6px">相冊</span>';
+      btnAlbum.style.cssText = 'background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center';
+      btnAlbum.onclick = function() { saveToAlbum(dataUrl); };
+
+      var btnBack = document.createElement('button');
+      btnBack.innerHTML = '<i class="fas fa-arrow-left" style="font-size:32px;color:#94a3b8"></i><span style="display:block;font-size:12px;color:#fff;margin-top:6px">返回</span>';
+      btnBack.style.cssText = 'background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center';
+      btnBack.onclick = function() { closeSharePanel(); };
+
+      btnContainer.appendChild(btnWechat);
+      btnContainer.appendChild(btnAlbum);
+      btnContainer.appendChild(btnBack);
+
+      overlay.appendChild(imgContainer);
+      imgContainer.appendChild(img);
+      overlay.appendChild(btnContainer);
+
+      overlay.onclick = function(e) {
+        if (e.target === overlay) closeSharePanel();
+      };
+
+      document.body.appendChild(overlay);
+    }
+
+    function closeSharePanel() {
+      var overlay = document.getElementById('sharePanel');
+      if (overlay) overlay.remove();
+    }
+
+    function shareToWechat(dataUrl) {
+      if (navigator.share && /mobile/i.test(navigator.userAgent)) {
+        navigator.share({
+          title: '輔導反饋',
+          files: [dataURLtoFile(dataUrl, 'feedback.jpg')]
+        }).catch(function() {});
       } else {
-        runCapture();
+        customConfirm('請長按圖片保存後發送給微信好友', function() {});
       }
+    }
+
+    function saveToAlbum(dataUrl) {
+      var a = document.createElement('a');
+      a.download = '輔導總結_' + Date.now() + '.jpg';
+      a.href = dataUrl;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      customConfirm('圖片已保存', function() {});
+      closeSharePanel();
+    }
+
+    function dataURLtoFile(dataurl, filename) {
+      var arr = dataurl.split(',');
+      var mime = arr[0].match(/:(.*?);/)[1];
+      var bstr = atob(arr[1]);
+      var n = bstr.length;
+      var u8arr = new Uint8Array(n);
+      while(n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], filename, {type:mime});
     }
 
     function showImageModal(dataUrl) {
@@ -1846,25 +2150,25 @@
       document.body.appendChild(m);
     }
 
-    // ========== Reset ==========
     function clearPersistedForm() {
       try { localStorage.removeItem(STORAGE_KEY); } catch (e) { }
       try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) { }
     }
 
-    /** 不依賴頁面跳轉與 localStorage：file://、iOS UC 常禁用存儲或攔截 location */
     function applyFormResetInPlace() {
       NAMES = DEFAULT_NAMES.slice();
       SHORT = JSON.parse(JSON.stringify(DEFAULT_SHORT));
       SUBJECTS = cloneDefaultSubjects();
 
-      var grid = document.getElementById('nameCheckboxes');
-      var customs = grid.querySelectorAll('label.custom-name');
-      for (var i = 0; i < customs.length; i++) {
-        customs[i].parentElement.removeChild(customs[i]);
-      }
-      var nameInputs = grid.querySelectorAll('input[name="studentName"]');
-      for (var j = 0; j < nameInputs.length; j++) nameInputs[j].checked = false;
+      var grids = document.querySelectorAll('.checkbox-grid');
+      grids.forEach(function(grid) {
+        var customs = grid.querySelectorAll('label.custom-name');
+        for (var i = 0; i < customs.length; i++) {
+          customs[i].parentElement.removeChild(customs[i]);
+        }
+        var nameInputs = grid.querySelectorAll('input[type="checkbox"]');
+        for (var j = 0; j < nameInputs.length; j++) nameInputs[j].checked = false;
+      });
 
       setDateInputToday();
       var summaryEl = document.getElementById('summaryInput');
@@ -1875,7 +2179,10 @@
       var previewContainer = document.getElementById('previewContainer');
       var previewContent = document.getElementById('previewContent');
       if (previewContent) previewContent.innerHTML = '';
-      if (previewContainer) previewContainer.style.display = 'none';
+      if (previewContainer) {
+        previewContainer.classList.remove('active');
+        previewContainer.style.display = 'none';
+      }
 
       var sc = document.getElementById('subjectsContainer');
       sc.innerHTML = '';
@@ -1898,7 +2205,6 @@
       });
     }
 
-    // ========== Auto Save / Restore ==========
     function debounceSave() {
       if (isResetting) return;
       if (saveTimeout) clearTimeout(saveTimeout);
@@ -1988,7 +2294,6 @@
             var cardsData = data.subjects[subj.id];
             if (!cardsData || !cardsData.length) continue;
             var container = document.getElementById('rows-' + subj.id);
-            // first card already exists
             for (var c = 1; c < cardsData.length; c++) {
               container.insertAdjacentHTML('beforeend', buildRowHTML(subj.id, c + 1));
             }
@@ -2046,9 +2351,79 @@
       }
     }
 
-    // ========== Listeners for auto-save + auto-grow on focus ==========
+    var autoSyncTimeout = null;
+    function handleAutoSync() {
+      if (autoSyncTimeout) clearTimeout(autoSyncTimeout);
+      autoSyncTimeout = setTimeout(function() {
+        performAutoSync();
+      }, 500);
+    }
+
+    async function performAutoSync() {
+      var dateStr = document.getElementById('dateInput').value;
+      if (!dateStr) return;
+
+      var loadingOverlay = document.getElementById('syncLoadingOverlay');
+      loadingOverlay.style.display = 'flex';
+
+      try {
+        var cloudResult = await downloadFromCloudWithCheck(dateStr);
+
+        if (cloudResult.hasData) {
+          isRestoringFromCloud = true;
+          resetFormWithoutConfirm();
+          restoreFormFromCloudData(cloudResult.data);
+          isRestoringFromCloud = false;
+          debounceSave();
+        } else {
+          loadFormData();
+        }
+      } catch (e) {
+        loadFormData();
+      }
+      loadingOverlay.style.display = 'none';
+    }
+
+    function resetFormWithoutConfirm() {
+      var checkboxes = document.querySelectorAll('.student-checkbox');
+      for (var i = 0; i < checkboxes.length; i++) {
+        checkboxes[i].checked = false;
+      }
+      var textareas = document.querySelectorAll('.subject-textarea');
+      for (var j = 0; j < textareas.length; j++) {
+        textareas[j].value = '';
+      }
+      var summaryInput = document.getElementById('summaryInput');
+      if (summaryInput) summaryInput.value = '';
+    }
+
+    async function downloadFromCloudWithCheck(dateStr) {
+      if (!dateStr) {
+        return { hasData: false };
+      }
+
+      var result = await supabase
+        .from('feedback_records')
+        .select('*')
+        .eq('feedback_date', dateStr)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (result.error || !result.data) {
+        return { hasData: false };
+      }
+
+      return { hasData: true, data: result.data };
+    }
+
     document.addEventListener('input', function () { debounceSave(); });
-    document.addEventListener('change', function () { debounceSave(); });
+    document.addEventListener('change', function (e) {
+      debounceSave();
+      if (e.target && e.target.id === 'dateInput') {
+        handleAutoSync();
+      }
+    });
     document.addEventListener('focusin', function (e) {
       if (e.target.classList && (e.target.classList.contains('field-textarea') || e.target.classList.contains('summary-textarea'))) {
         var el = e.target;
@@ -2069,13 +2444,11 @@
     window.addEventListener('beforeunload', onPageLeave);
     window.addEventListener('pagehide', onPageLeave);
 
-    // ========== Utility ==========
     function escapeHtml(s) {
       if (!s) return '';
       return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    // ========== 上传数据到 Supabase ==========
     async function uploadToCloud() {
       var dateStr = document.getElementById('dateInput').value || '';
       if (!dateStr) {
@@ -2129,10 +2502,28 @@
         localStorage.setItem('deviceId', deviceId);
       }
 
+      var customNamesClass1 = [];
+      var customLabels1 = document.querySelectorAll('#nameCheckboxesClass1 label.custom-name input[name="studentNameClass1"]');
+      for (var i = 0; i < customLabels1.length; i++) {
+        if (customNamesClass1.indexOf(customLabels1[i].value) === -1) customNamesClass1.push(customLabels1[i].value);
+      }
+      var customNamesClass2 = [];
+      var customLabels2 = document.querySelectorAll('#nameCheckboxesClass2 label.custom-name input[name="studentNameClass2"]');
+      for (var i = 0; i < customLabels2.length; i++) {
+        if (customNamesClass2.indexOf(customLabels2[i].value) === -1) customNamesClass2.push(customLabels2[i].value);
+      }
+      var customSubjects = [];
+      for (var i = 0; i < SUBJECTS.length; i++) {
+        if (SUBJECTS[i].custom) customSubjects.push({ id: SUBJECTS[i].id, label: SUBJECTS[i].label });
+      }
+
       var recordData = {
         feedback_date: dateStr,
         student_names_class1: selNamesClass1,
         student_names_class2: selNamesClass2,
+        custom_names_class1: customNamesClass1,
+        custom_names_class2: customNamesClass2,
+        custom_subjects: customSubjects,
         summary: summaryVal,
         subjects_data: subjectsData,
         device_id: deviceId,
@@ -2170,7 +2561,6 @@
       }
     }
 
-    // ========== 从 Supabase 下载数据 ==========
     async function downloadFromCloud(dateStr) {
       if (!dateStr) {
         dateStr = document.getElementById('dateInput').value;
@@ -2203,6 +2593,28 @@
       var allCbsClass2 = document.querySelectorAll('input[name="studentNameClass2"]');
       for (var i = 0; i < allCbsClass1.length; i++) allCbsClass1[i].checked = false;
       for (var i = 0; i < allCbsClass2.length; i++) allCbsClass2[i].checked = false;
+
+      if (data.custom_names_class1 && Array.isArray(data.custom_names_class1)) {
+        var grid1 = document.getElementById('nameCheckboxesClass1');
+        for (var i = 0; i < data.custom_names_class1.length; i++) {
+          addCustomNameToGrid(grid1, data.custom_names_class1[i], 'studentNameClass1');
+        }
+      }
+      if (data.custom_names_class2 && Array.isArray(data.custom_names_class2)) {
+        var grid2 = document.getElementById('nameCheckboxesClass2');
+        for (var i = 0; i < data.custom_names_class2.length; i++) {
+          addCustomNameToGrid(grid2, data.custom_names_class2[i], 'studentNameClass2');
+        }
+      }
+
+      if (data.custom_subjects && Array.isArray(data.custom_subjects)) {
+        for (var i = 0; i < data.custom_subjects.length; i++) {
+          var cs = data.custom_subjects[i];
+          if (!SUBJECTS.find(function(s) { return s.id === cs.id; })) {
+            addCustomSubject(cs.id, cs.label);
+          }
+        }
+      }
 
       if (data.student_names_class1 && Array.isArray(data.student_names_class1)) {
         for (var i = 0; i < data.student_names_class1.length; i++) {
@@ -2272,22 +2684,24 @@
     }
 
     async function handleSync() {
-      var dateStr = document.getElementById('dateInput').value;
-      if (!dateStr) {
-        customConfirm('請先選擇日期', function() {});
-        return;
-      }
-      isRestoringFromCloud = true;
-      var result = await downloadFromCloud(dateStr);
-      isRestoringFromCloud = false;
-      if (result.success) {
-        customConfirm('數據已從雲端同步！', function() {});
-      } else {
-        customConfirm('同步失敗: ' + result.error, function() {});
-      }
+      customConfirm('確認從雲端同步？', async function(ok) {
+        if (!ok) return;
+        var dateStr = document.getElementById('dateInput').value;
+        if (!dateStr) {
+          customConfirm('請先選擇日期', function() {});
+          return;
+        }
+        isRestoringFromCloud = true;
+        var result = await downloadFromCloud(dateStr);
+        isRestoringFromCloud = false;
+        if (result.success) {
+          customConfirm('數據已從雲端同步！', function() {});
+        } else {
+          customConfirm('同步失敗: ' + result.error, function() {});
+        }
+      });
     }
 
-    // ========== Wage Calculation ==========
     function getWageRate(count) {
       if (count >= 3) return 300;
       if (count === 2) return 250;
@@ -2344,11 +2758,11 @@
         html = '<table class="wage-table">' +
           '<thead><tr>' +
           '<th>日期</th>' +
-          '<th>Class 1 人數</th>' +
-          '<th>Class 1 工資</th>' +
-          '<th>Class 2 人數</th>' +
-          '<th>Class 2 工資</th>' +
-          '<th>當日合計</th>' +
+          '<th>C1 人數</th>' +
+          '<th>C1 工資</th>' +
+          '<th>C2 人數</th>' +
+          '<th>C2 工資</th>' +
+          '<th>小計</th>' +
           '</tr></thead><tbody>';
 
         for (var i = 0; i < records.length; i++) {
@@ -2382,7 +2796,76 @@
       document.getElementById('wageResultCard').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // ========== Custom Tooltip ==========
+    async function exportWageToExcel() {
+      var startDate = document.getElementById('wageStartDate').value;
+      var endDate = document.getElementById('wageEndDate').value;
+
+      if (!startDate || !endDate) {
+        customConfirm('請選擇開始日期和結束日期', function() {});
+        return;
+      }
+
+      var result = await supabase
+        .from('feedback_records')
+        .select('feedback_date, student_names_class1, student_names_class2')
+        .gte('feedback_date', startDate)
+        .lte('feedback_date', endDate)
+        .order('feedback_date', { ascending: true });
+
+      if (result.error) {
+        customConfirm('導出失敗: ' + result.error.message, function() {});
+        return;
+      }
+
+      var records = result.data || [];
+      if (records.length === 0) {
+        customConfirm('沒有數據可導出', function() {});
+        return;
+      }
+
+      var csv = '\uFEFF';
+      csv += '\u4E09\u7C4D\u5DE5\u8D44\u660E\u7EC6\u8868\n';
+      csv += '\u5F00\u59CB\u65E5\u671F,' + escapeCsv(startDate) + '\n';
+      csv += '\u7ED3\u675F\u65E5\u671F,' + escapeCsv(endDate) + '\n\n';
+      csv += '\u65E5\u671F,C1\u4EBA\u6570,C1\u5DE5\u8D44,C2\u4EBA\u6570,C2\u5DE5\u8D44,\u5C0F\u8BA1\n';
+
+      var totalWage = 0;
+      for (var i = 0; i < records.length; i++) {
+        var rec = records[i];
+        var dateStr = rec.feedback_date;
+        var class1Count = (rec.student_names_class1 && Array.isArray(rec.student_names_class1)) ? rec.student_names_class1.length : 0;
+        var class2Count = (rec.student_names_class2 && Array.isArray(rec.student_names_class2)) ? rec.student_names_class2.length : 0;
+        var class1Wage = getWageRate(class1Count);
+        var class2Wage = getWageRate(class2Count);
+        var dayTotal = class1Wage + class2Wage;
+        totalWage += dayTotal;
+
+        csv += escapeCsv(dateStr) + ',' + class1Count + ',' + class1Wage + ',' + class2Count + ',' + class2Wage + ',' + dayTotal + '\n';
+      }
+
+      csv += ',,,\u603B\u8BA1,' + totalWage + '\n';
+
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement('a');
+      var ts = new Date().getFullYear() +
+        ('0' + (new Date().getMonth() + 1)).slice(-2) +
+        ('0' + new Date().getDate()).slice(-2);
+      link.download = '\u5DE5\u8D44\u660E\u7EC6_' + ts + '.csv';
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function escapeCsv(str) {
+      if (str == null) return '';
+      str = String(str);
+      if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) {
+        str = '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
     (function () {
       var tip = document.getElementById('tooltip');
       var hideTimer = null;
@@ -2440,10 +2923,11 @@
         hideTimer = setTimeout(function () { hideTip(t); }, 1500);
       }, { passive: true });
     })();
-
+  </script>
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/pppter-feedback-form/sw.js')
+        navigator.serviceWorker.register('sw.js')
           .then(function(registration) {
             console.log('SW registered:', registration.scope);
           })
