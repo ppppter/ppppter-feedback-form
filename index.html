@@ -383,7 +383,26 @@
       margin-bottom: 12px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 8px;
+    }
+
+    .btn-import-homework {
+      font-size: .75rem;
+      padding: 4px 10px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+    }
+
+    .btn-import-homework:active {
+      transform: scale(.95);
     }
 
     .subject-section {
@@ -1269,7 +1288,12 @@
         </div>
       </div>
 
-      <div class="section-title"><i class="fas fa-book-open"></i> 學科詳情</div>
+      <div class="section-title">
+        <span><i class="fas fa-book-open"></i> 學科詳情</span>
+        <button type="button" class="btn-import-homework" onclick="showImportHomeworkDialog()">
+          <i class="fas fa-file-import"></i> 導入作業文本
+        </button>
+      </div>
       <div id="subjectsContainer"></div>
       <button type="button" class="btn-add-subject" onclick="addSubject()"><i
           class="fas fa-folder-plus"></i><span>新增學科</span></button>
@@ -1819,6 +1843,118 @@
       if (header) header.classList.remove('collapsed');
       var body = document.getElementById('body-' + id);
       if (body) body.style.display = '';
+    }
+
+    function showImportHomeworkDialog() {
+      var example = '學科1\n1）作業1\n2）作業2\n\n學科2\n1）作業1\n2）作業2';
+      var html = '<div style="font-size:12px;color:#666;margin-bottom:10px">粘貼以下格式的文本：</div>' +
+        '<div id="exampleText" style="font-size:11px;color:#999;background:#f5f5f5;padding:8px;border-radius:4px;margin-bottom:10px;white-space:pre-wrap;max-height:120px;overflow:auto"></div>' +
+        '<textarea id="importHomeworkText" style="width:100%;height:200px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px" placeholder="粘貼作業文本..."></textarea>';
+
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+      overlay.innerHTML = '<div style="background:#fff;border-radius:12px;padding:20px;width:100%;max-width:400px;max-height:90vh;overflow:auto">' +
+        '<div style="font-size:16px;font-weight:600;margin-bottom:12px">導入作業文本</div>' +
+        html +
+        '<div style="display:flex;gap:10px;margin-top:12px;justify-content:flex-end">' +
+        '<button onclick="this.closest(\'div\').parentElement.parentElement.remove()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5;cursor:pointer">取消</button>' +
+        '<button onclick="importHomeworkFromText()" style="padding:10px 20px;border:none;border-radius:8px;background:var(--primary);color:#fff;cursor:pointer;font-weight:500">確定導入</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+
+      document.getElementById('exampleText').textContent = example;
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.remove();
+      });
+    }
+
+    function importHomeworkFromText() {
+      var text = document.getElementById('importHomeworkText').value;
+      if (!text || !text.trim()) {
+        customConfirm('請輸入作業文本', function() {});
+        return;
+      }
+
+      var parsed = parseHomeworkText(text.trim());
+      if (parsed.length === 0) {
+        customConfirm('無法解析文本，請確保格式正確', function() {});
+        return;
+      }
+
+      for (var i = 0; i < parsed.length; i++) {
+        var item = parsed[i];
+        var subj = SUBJECTS.find(function(s) { return s.label === item.subject; });
+        if (!subj) {
+          customConfirm('未找到學科「' + item.subject + '」，請先添加該學科', function() {});
+          continue;
+        }
+
+        var container = document.getElementById('rows-' + subj.id);
+        if (!container) continue;
+
+        container.innerHTML = '';
+
+        for (var j = 0; j < item.homeworks.length; j++) {
+          container.insertAdjacentHTML('beforeend', buildRowHTML(subj.id, j + 1));
+          var cards = container.querySelectorAll('.hw-card');
+          var card = cards[cards.length - 1];
+          var hwTextarea = card.querySelector('textarea[data-key="homework"]');
+          if (hwTextarea) {
+            hwTextarea.value = item.homeworks[j];
+            autoGrow(hwTextarea);
+          }
+        }
+
+        var header = document.querySelector('#section-' + subj.id + ' .subject-header');
+        if (header) header.classList.remove('collapsed');
+        var body = document.getElementById('body-' + subj.id);
+        if (body) body.style.display = '';
+      }
+
+      document.querySelector('.custom-modal, [style*="z-index:99999"]').remove();
+      customConfirm('已成功導入 ' + parsed.length + ' 個學科的作業', function() {});
+      debounceSave();
+    }
+
+    function parseHomeworkText(text) {
+      var lines = text.split('\n');
+      var result = [];
+      var currentSubject = null;
+      var currentHomeworks = [];
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) {
+          if (currentSubject && currentHomeworks.length > 0) {
+            result.push({ subject: currentSubject, homeworks: currentHomeworks.slice() });
+            currentSubject = null;
+            currentHomeworks = [];
+          }
+          continue;
+        }
+
+        var subjectMatch = line.match(/^(.+?)\s*$/);
+        var isHomeworkLine = /^\d+[.、)）]\s*(.+)/.test(line);
+
+        if (!isHomeworkLine && subjectMatch && line.length > 0) {
+          if (currentSubject && currentHomeworks.length > 0) {
+            result.push({ subject: currentSubject, homeworks: currentHomeworks.slice() });
+          }
+          currentSubject = line.replace(/[?？,，.。:：;；!！\s]+$/, '').trim();
+          currentHomeworks = [];
+        } else if (isHomeworkLine) {
+          var match = line.match(/^\d+[.、)）]\s*(.+)/);
+          if (match && currentSubject) {
+            currentHomeworks.push(match[1].trim());
+          }
+        }
+      }
+
+      if (currentSubject && currentHomeworks.length > 0) {
+        result.push({ subject: currentSubject, homeworks: currentHomeworks });
+      }
+
+      return result;
     }
 
     function removeSubject(id) {
